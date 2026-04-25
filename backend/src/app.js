@@ -10,7 +10,9 @@ const app = express();
 
 app.use(
   cors({
-    origin: process.env.FRONTEND_URL || "https://quecareclinic.vercel.app",
+    origin: (
+      process.env.FRONTEND_URL || "https://quecareclinic.vercel.app"
+    ).split(","),
     credentials: true,
   }),
 );
