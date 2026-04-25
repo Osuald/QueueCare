@@ -22,11 +22,14 @@ export default function Appointments() {
   const { isStaff } = useAuth();
   const navigate = useNavigate();
 
+  const today = new Date().toISOString().split('T')[0];
+
   const [appointments, setAppointments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [cancelConfirm, setCancelConfirm] = useState(null); // appointment id
+  const [cancelConfirm, setCancelConfirm] = useState(null);
   const [cancelling, setCancelling] = useState(false);
+  const [serving, setServing] = useState(null);
 
   useEffect(() => { loadAppointments(); }, []);
 
@@ -53,6 +56,21 @@ export default function Appointments() {
       setError(err.response?.data?.error || 'Failed to cancel appointment.');
     } finally {
       setCancelling(false);
+    }
+  }
+
+  async function handleServe(id) {
+    setServing(id);
+    setError('');
+    try {
+      await api.patch(`/queue/${id}/serve`);
+      setAppointments((prev) =>
+        prev.map((a) => (a.id === id ? { ...a, status: 'served' } : a))
+      );
+    } catch (err) {
+      setError(err.response?.data?.error || 'Failed to mark as served.');
+    } finally {
+      setServing(null);
     }
   }
 
@@ -128,6 +146,19 @@ export default function Appointments() {
                       <StatusBadge status={a.status} />
                       {a.status !== 'served' && (
                         <>
+                          {/* Staff: mark served (only for today's appointments) */}
+                          {isStaff && a.date === today && (
+                            <button
+                              className="btn btn-success btn-sm"
+                              onClick={() => handleServe(a.id)}
+                              disabled={serving === a.id}
+                              data-testid="mark-served-btn"
+                              aria-label={`Mark ${a.patient_name || 'patient'} as served`}
+                            >
+                              {serving === a.id ? 'Marking...' : 'Mark Served'}
+                            </button>
+                          )}
+                          {/* Patients: edit and cancel */}
                           {!isStaff && (
                             <button
                               className="btn btn-outline btn-sm"

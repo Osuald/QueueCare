@@ -1,6 +1,6 @@
 # QueueCare — Test Report
 
-**Author:** Munyembuga (munyembuga_222014445@stud.ur.ac.rw)  
+**Author:** Osuald Iradukunda (osualdiradukunda16@gmail.com)  
 **Date:** April 2026  
 **Stack:** Node.js · Express · SQLite (better-sqlite3) · React · Vite · Jest · Supertest · Playwright
 
@@ -10,21 +10,21 @@
 
 ### Architecture
 
-A standard three-tier web application:
+This is a standard three-tier web application:
 
-- **Backend** — Express REST API on port 5000. Routes are split by domain: `auth`, `appointments`, `queue`. JWT-based authentication with `bcryptjs` for password hashing. `better-sqlite3` for synchronous SQLite access — chosen because it eliminates async callback complexity and is perfectly adequate for a single-server clinic tool.
+- **Backend** — Express REST API on port 5000. Routes are split by using domain: `auth`, `appointments`, `queue`. JWT-based authentication with `bcryptjs` for password hashing. `better-sqlite3` for synchronous SQLite access — chosen because it eliminates async callback complexity and is perfectly adequate for a single-server clinic tool.
 - **Database** — SQLite stored in `backend/data/queuecare.db`. Two tables: `users` and `appointments`. For tests, an in-memory database (`:memory:`) is used so tests are self-contained and leave no files behind.
 - **Frontend** — React 18 + Vite, with React Router v6. No CSS framework — custom properties with a 60/30/10 white/teal/dark scheme. Role-aware UI: patients see their own appointments and the booking form; staff additionally see the queue management page.
 
 ### Key design decisions
 
-| Decision | Reason |
-|----------|--------|
-| In-memory DB for API tests | Tests run in the same Node process with `--runInBand`, so a shared in-memory store is fast and automatically discarded |
-| Queue numbers use `MAX + 1` (not `COUNT + 1`) | Cancellations leave gaps in COUNT; MAX guarantees new numbers are always unique |
-| `status` field CHECK constraint in SQLite | Prevents invalid statuses being written by direct DB access, not just the API |
-| JWT expiry of 24 h | Balances session longevity for patients with basic security |
-| Role registered freely | Per the spec; flagged as a security weakness in the bugs section below |
+| Decision                                      | Reason                                                                                                                 |
+| --------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| In-memory DB for API tests                    | Tests run in the same Node process with `--runInBand`, so a shared in-memory store is fast and automatically discarded |
+| Queue numbers use `MAX + 1` (not `COUNT + 1`) | Cancellations leave gaps in COUNT; MAX guarantees new numbers are always unique                                        |
+| `status` field CHECK constraint in SQLite     | Prevents invalid statuses being written by direct DB access, not just the API                                          |
+| JWT expiry of 24 h                            | Balances session longevity for patients with basic security                                                            |
+| Role registered freely                        | According to specifications; flagged as a security weakness in the bugs section below                                  |
 
 ---
 
@@ -33,6 +33,7 @@ A standard three-tier web application:
 ### API Tests — 3 suites, ~40 test cases
 
 #### `auth.test.js`
+
 - Successful registration (patient, staff roles)
 - Duplicate email rejection
 - Missing required fields (name, email, password)
@@ -44,6 +45,7 @@ A standard three-tier web application:
 - Access with invalid/malformed token → 401
 
 #### `appointments.test.js`
+
 - Create appointment → queue number assigned sequentially
 - Second appointment on same date gets incremented queue number
 - Patient sees only their own appointments (role-based filtering)
@@ -64,6 +66,7 @@ A standard three-tier web application:
 - Re-book same day after cancellation → 201 (allowed)
 
 #### `queue.test.js`
+
 - GET today's queue — authenticated user
 - Queue ordered by queue_number ASC
 - Cancelled appointments excluded from queue
@@ -76,9 +79,10 @@ A standard three-tier web application:
 - Mark non-existent appointment → 404
 - Mark cancelled appointment as served → 400
 
-### UI Tests — 2 spec files, ~20 test cases
+### UI Tests — 2 files, ~20 test cases
 
 #### `login.spec.js`
+
 - Successful login redirects to dashboard
 - Dashboard shows user name after login
 - Wrong password shows error
@@ -92,6 +96,7 @@ A standard three-tier web application:
 - Register link navigates to register page
 
 #### `appointments.spec.js`
+
 - Patient books appointment via form → appears in list with queue number
 - Booked appointment appears in list with correct details
 - Empty form shows validation errors
@@ -112,25 +117,27 @@ A standard three-tier web application:
 ## What I Automated
 
 ### Fully automated
+
 All happy-path, negative, and most edge-case scenarios are automated via Jest + Supertest (API) and Playwright (UI).
 
 ### Manually tested / not automated
-| Scenario | Why not automated |
-|----------|------------------|
-| UI registration form full flow | Registration is tested at the API level; UI tests use the API for setup to avoid flakiness from state carry-over |
-| Concurrent queue-number assignment (race condition) | Requires deliberate concurrency simulation; covered in the bugs section as a known design limitation |
-| JWT expiry behaviour (token valid, then expires after 24 h) | Would require time-mocking or a very long wait; documented as a known limitation |
-| Cross-browser testing | Playwright config runs Chromium only; Firefox and WebKit are straightforward to add |
+
+| Scenario                                                    | Why not automated                                                                                                |
+| ----------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| UI registration form full flow                              | Registration is tested at the API level; UI tests use the API for setup to avoid flakiness from state carry-over |
+| Concurrent queue-number assignment (race condition)         | Requires deliberate concurrency simulation; covered in the bugs section as a known design limitation             |
+| JWT expiry behaviour (token valid, then expires after 24 h) | Would require time-mocking or a very long wait; documented as a known limitation                                 |
+| Cross-browser testing                                       | Playwright config runs Chromium only; Firefox and WebKit are straightforward to add                              |
 
 ---
 
 ## Bugs Found
 
-### Bug 1 — Race condition in queue number assignment *(medium)*
+### Bug 1 — Race condition in queue number assignment
 
 **Description:** The queue number is assigned by reading `MAX(queue_number) + 1` in a single `SELECT`. Under concurrent requests for the same date, two requests arriving simultaneously could read the same MAX value and both receive the same queue number.
 
-**Reproduction:** Send two simultaneous POST `/api/appointments` requests for the same date with different patients. Occasionally both receive `queue_number = 1`.
+**Reproduction:** Sending two simultaneous POST `/api/appointments` requests for the same date with different patients. Occasionally both receive `queue_number = 1`.
 
 **Impact:** Queue ordering becomes ambiguous for two patients. The queue page would show two patients with the same number.
 
@@ -138,40 +145,23 @@ All happy-path, negative, and most edge-case scenarios are automated via Jest + 
 
 ---
 
-### Bug 2 — Any user can self-assign the 'admin' role on registration *(high — security)*
+### Bug 2 — Any user can self-assign the 'admin' role on registration
 
 **Description:** The `POST /api/auth/register` endpoint accepts a `role` field from the request body. Any user can register as `admin` or `staff` without verification.
 
-**Reproduction:**
-```json
-POST /api/auth/register
-{ "name": "Hacker", "email": "h@x.com", "password": "pass123", "role": "admin" }
-```
-Response: `201` with `role: "admin"`.
-
-**Impact:** A malicious user can gain staff/admin access and mark appointments as served, view all patients, or cancel any appointment.
-
-**Fix:** Only allow `role: "patient"` during public registration. Admin/staff accounts should be created by an existing admin through a separate, protected endpoint.
+**How i can Fix It (requires enough time):** Only allow `role: "patient"` during registration. Admin/staff accounts should be created by an existing admin through a separate, protected endpoint.
 
 ---
 
-### Bug 3 — Updating an appointment to the same date does not trigger a duplicate check *(low)*
+### Bug 3 — Updating an appointment to the same date does not trigger a duplicate check
 
-**Description:** When a patient reschedules to the *same date they already have*, the duplicate check condition `date != appointment.date` skips the check. Because the appointment's date doesn't change, no conflict is detected. In isolation this is correct, but if the patient has a *second*, *cancelled* appointment on that date that was later re-booked by staff, duplicate data could accumulate.
-
-**Impact:** Low under normal usage; only manifests with multi-step edge-case state.
-
-**Fix:** Remove the `date !== appointment.date` early return guard and always run the duplicate check (excluding the current appointment by ID).
+**Description:** When a patient reschedules to the _same date they already have_, the duplicate check condition `date != appointment.date` skips the check. Because the appointment's date doesn't change, no conflict is detected.
 
 ---
 
-### Bug 4 — No input sanitisation for doctor/reason fields *(low — injection concern)*
+### Bug 4 — No input sanitisation for doctor/reason fields
 
-**Description:** The `doctor` and `reason` fields are stored and returned verbatim. While the app does not render HTML server-side, a React frontend using `dangerouslySetInnerHTML` (it currently does not) would be vulnerable to stored XSS.
-
-**Impact:** Currently low — React escapes output by default. Would become high if the frontend is ever modified to render raw HTML from API responses.
-
-**Fix:** Add a simple `sanitize()` helper that strips HTML tags before insertion, or enforce a maximum field length to reduce attack surface.
+**Description:** The `doctor` and `reason` fields are stored and returned which no ckeck.
 
 ---
 

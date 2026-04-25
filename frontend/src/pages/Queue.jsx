@@ -6,6 +6,16 @@ function StatusBadge({ status }) {
   return <span className={`badge badge-${status}`}>{status}</span>;
 }
 
+function IconRefresh() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="23 4 23 10 17 10" />
+      <polyline points="1 20 1 14 7 14" />
+      <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
+    </svg>
+  );
+}
+
 export default function Queue() {
   const [queue, setQueue] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -19,6 +29,7 @@ export default function Queue() {
   useEffect(() => { loadQueue(); }, []);
 
   async function loadQueue() {
+    setLoading(true);
     try {
       const res = await api.get('/queue/today');
       setQueue(res.data.queue);
@@ -48,6 +59,9 @@ export default function Queue() {
 
   const waiting = queue.filter((a) => a.status !== 'served');
   const served = queue.filter((a) => a.status === 'served');
+  const servedPercent = queue.length > 0
+    ? Math.round((served.length / queue.length) * 100)
+    : 0;
 
   return (
     <div>
@@ -58,10 +72,10 @@ export default function Queue() {
         </div>
         <button
           className="btn btn-outline btn-sm"
-          onClick={() => { setLoading(true); loadQueue(); }}
+          onClick={loadQueue}
           aria-label="Refresh queue"
         >
-          Refresh
+          <IconRefresh /> Refresh
         </button>
       </div>
 
@@ -71,30 +85,54 @@ export default function Queue() {
         </div>
       )}
 
-      <div style={{ display: 'flex', gap: '12px', marginBottom: '24px', flexWrap: 'wrap' }}>
-        <div className="stat-card" style={{ flex: '1', minWidth: '140px' }}>
-          <div className="stat-label">Waiting</div>
-          <div className="stat-value" style={{ color: 'var(--warning)' }}>{waiting.length}</div>
+      {/* Stats row */}
+      <div className="queue-stats-row">
+        <div className="queue-stat waiting">
+          <div className="queue-stat-value">{waiting.length}</div>
+          <div className="queue-stat-label">Waiting</div>
         </div>
-        <div className="stat-card" style={{ flex: '1', minWidth: '140px' }}>
-          <div className="stat-label">Served</div>
-          <div className="stat-value" style={{ color: 'var(--success)' }}>{served.length}</div>
+        <div className="queue-stat served">
+          <div className="queue-stat-value">{served.length}</div>
+          <div className="queue-stat-label">Served</div>
         </div>
-        <div className="stat-card" style={{ flex: '1', minWidth: '140px' }}>
-          <div className="stat-label">Total</div>
-          <div className="stat-value">{queue.length}</div>
+        <div className="queue-stat total">
+          <div className="queue-stat-value">{queue.length}</div>
+          <div className="queue-stat-label">Total</div>
         </div>
       </div>
+
+      {/* Progress bar */}
+      {queue.length > 0 && (
+        <div className="card" style={{ marginBottom: '20px', padding: '16px 20px' }}>
+          <div className="queue-progress-header">
+            <span className="queue-progress-label">Queue progress</span>
+            <span className="queue-progress-pct">{served.length} of {queue.length} served — {servedPercent}%</span>
+          </div>
+          <div className="progress-bar">
+            <div
+              className="progress-fill"
+              style={{ width: `${servedPercent}%` }}
+              role="progressbar"
+              aria-valuenow={servedPercent}
+              aria-valuemin={0}
+              aria-valuemax={100}
+            />
+          </div>
+        </div>
+      )}
 
       {queue.length === 0 ? (
         <div className="empty-state card">
           <h3>No patients in queue today</h3>
-          <p>Appointments booked for today will appear here.</p>
+          <p>Appointments booked for today will appear here once confirmed.</p>
         </div>
       ) : (
         <div className="card">
           <div className="card-header">
             <h2 className="card-title">Queue Order</h2>
+            <span className="badge badge-pending" style={{ fontSize: '0.8rem' }}>
+              {waiting.length} waiting
+            </span>
           </div>
           <div className="appt-list" data-testid="queue-list">
             {queue.map((a) => (
@@ -104,13 +142,14 @@ export default function Queue() {
                 data-testid="queue-item"
                 data-id={a.id}
               >
-                <div className={`appt-queue-num ${a.status}`}>
-                  <span data-testid="queue-number">{a.queue_number}</span>
+                <div className={`queue-num-badge ${a.status}`}>
+                  <span data-testid="queue-number">#{a.queue_number}</span>
                 </div>
                 <div className="appt-details" style={{ flex: 1 }}>
                   <div className="appt-doctor">{a.patient_name}</div>
                   <div className="appt-meta">
                     <span>{a.doctor}</span>
+                    <span>·</span>
                     <span>{a.reason}</span>
                   </div>
                 </div>
@@ -118,14 +157,17 @@ export default function Queue() {
                   <StatusBadge status={a.status} />
                   {a.status !== 'served' && (
                     <button
-                      className="btn btn-primary btn-sm"
+                      className="btn btn-success btn-sm"
                       onClick={() => handleServe(a.id)}
                       disabled={serving === a.id}
                       data-testid="mark-served-btn"
                       aria-label={`Mark ${a.patient_name} as served`}
                     >
-                      {serving === a.id ? 'Marking...' : 'Mark served'}
+                      {serving === a.id ? 'Marking...' : 'Mark Served'}
                     </button>
+                  )}
+                  {a.status === 'served' && (
+                    <span className="served-check" aria-label="Served">✓</span>
                   )}
                 </div>
               </div>
