@@ -158,3 +158,6 @@ npm run test:all
 | DELETE | `/api/appointments/:id` | Bearer               | Cancel appointment                    |
 | GET    | `/api/queue/today`      | Bearer               | Today's queue ordered by queue number |
 | PATCH  | `/api/queue/:id/serve`  | Bearer (staff/admin) | Mark patient as served                |
+
+
+
