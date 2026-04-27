@@ -77,12 +77,16 @@ npm run dev
 
 API is available at `http://localhost:5000/api`
 
+API is also deployed at `https://queuecare-fr0r.onrender.com`
+
 **Frontend:**
 
 cd frontend
 npm run dev
 
 App is available at `http://localhost:3000`
+
+App is also deployed at `https://quecareclinic.vercel.app`
 
 ---
 
@@ -158,6 +162,3 @@ npm run test:all
 | DELETE | `/api/appointments/:id` | Bearer               | Cancel appointment                    |
 | GET    | `/api/queue/today`      | Bearer               | Today's queue ordered by queue number |
 | PATCH  | `/api/queue/:id/serve`  | Bearer (staff/admin) | Mark patient as served                |
-
-
-
