@@ -8,9 +8,11 @@ const queueRoutes = require("./routes/queue");
 
 const app = express();
 
-const allowedOrigins = (
-  process.env.FRONTEND_URL || "https://quecareclinic.vercel.app"
-).split(",").map((o) => o.trim());
+const allowedOrigins = [
+  "https://quecareclinic.vercel.app",
+  "http://localhost:5173", // For local development
+  "http://localhost:3000",
+];
 
 const corsOptions = {
   origin: (origin, callback) => {
