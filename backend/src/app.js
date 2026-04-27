@@ -8,14 +8,27 @@ const queueRoutes = require("./routes/queue");
 
 const app = express();
 
-app.use(
-  cors({
-    origin: (
-      process.env.FRONTEND_URL || "https://quecareclinic.vercel.app"
-    ).split(","),
-    credentials: true,
-  }),
-);
+const allowedOrigins = (
+  process.env.FRONTEND_URL || "https://quecareclinic.vercel.app"
+).split(",").map((o) => o.trim());
+
+const corsOptions = {
+  origin: (origin, callback) => {
+    // Allow requests with no origin (curl, Postman, server-to-server)
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error(`CORS: origin ${origin} not allowed`));
+    }
+  },
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+};
+
+// Handle OPTIONS preflight for every route BEFORE other middleware
+app.options("*", cors(corsOptions));
+app.use(cors(corsOptions));
 app.use(express.json());
 
 app.get("/api/health", (_req, res) => res.json({ status: "ok" }));
