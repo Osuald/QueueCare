@@ -750,6 +750,116 @@ img { max-width: 100%; }
 }
 
 /* ------------------------------------------------------------------ */
+/* Section count badge (card title)                                     */
+/* ------------------------------------------------------------------ */
+.section-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--primary-light);
+  color: var(--primary-dark);
+  font-size: 0.72rem;
+  font-weight: 700;
+  border-radius: 999px;
+  padding: 1px 8px;
+  margin-left: 8px;
+  vertical-align: middle;
+}
+
+/* Today badge on appointment cards */
+.today-badge {
+  display: inline-flex;
+  align-items: center;
+  background: var(--warning-light);
+  color: var(--warning);
+  font-size: 0.7rem;
+  font-weight: 700;
+  border-radius: 999px;
+  padding: 1px 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+/* History section hint text */
+.history-hint {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  padding: 12px 0 4px;
+}
+
+/* Muted appearance for history cards */
+.history-card {
+  opacity: 0.8;
+  background: #FAFAFA;
+}
+
+/* ------------------------------------------------------------------ */
+/* History table (staff logs)                                           */
+/* ------------------------------------------------------------------ */
+.history-table-wrap {
+  overflow-x: auto;
+  margin-top: 4px;
+}
+
+.history-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.history-table thead tr {
+  background: var(--bg);
+  border-bottom: 2px solid var(--border-light);
+}
+
+.history-table th {
+  padding: 10px 14px;
+  text-align: left;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.history-table td {
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--border-light);
+  color: var(--text);
+  vertical-align: middle;
+}
+
+.history-table tbody tr:last-child td { border-bottom: none; }
+
+.history-table tbody tr:hover { background: var(--bg); }
+
+.history-table tr.row-cancelled td { opacity: 0.55; }
+
+.history-table .col-num {
+  font-weight: 700;
+  color: var(--primary-dark);
+  width: 40px;
+}
+
+.history-table .col-name { font-weight: 600; }
+
+.history-table .col-date {
+  white-space: nowrap;
+  color: var(--text-muted);
+  font-size: 0.82rem;
+}
+
+.history-table .col-reason {
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text-muted);
+  font-size: 0.82rem;
+}
+
+/* ------------------------------------------------------------------ */
 /* Auth pages                                                           */
 /* ------------------------------------------------------------------ */
 .auth-page {

@@ -95,10 +95,10 @@ export default function Dashboard() {
   if (loading) return <Spinner />;
 
   const upcoming = appointments.filter(
-    (a) => a.date >= today && a.status !== 'cancelled'
+    (a) => a.date >= today && ['pending', 'confirmed'].includes(a.status)
   );
   const todayAppts = appointments.filter(
-    (a) => a.date === today && a.status !== 'cancelled'
+    (a) => a.date === today && ['pending', 'confirmed', 'served'].includes(a.status)
   );
   const served = queue.filter((a) => a.status === 'served').length;
   const waiting = queue.filter((a) => a.status !== 'served').length;
